@@ -83,7 +83,6 @@ class Function():
 
 class IdealFunction(Function):
     def __init__(self, ideal_functions):
-        # super.__init__()
         self.ideal_functions = ideal_functions
 
  
