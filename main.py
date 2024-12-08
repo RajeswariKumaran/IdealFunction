@@ -5,8 +5,16 @@ import statsmodels.api as sm
 import numpy as np
 from sklearn.metrics import root_mean_squared_error
 from utils.data_utils import load_csv_to_df
+from dotenv import load_dotenv
+from utils import visualisation_helper as charthelp
+
+load_dotenv()
+
 global create_and_initial_load
-create_and_initial_load = True
+create_and_initial_load = os.getenv("create_and_initial_load")
+global create_visualisation
+create_visualisation = os.getenv('create_visualisation')
+
 
 class Function():
 
@@ -34,7 +42,6 @@ class Function():
             model = sm.OLS(y, x).fit()
             train_x = train_df['x']
             train_x = sm.add_constant(train_x)
-            if (i==0): print(train_x)
             y_pred = model.predict(train_x)
             # print('type in prevp pred')
             # print(type(train_x))
@@ -61,7 +68,7 @@ class Function():
                             df_ideal["y2_rmse"], df_ideal["y3_rmse"],\
                             df_ideal["y4_rmse"], True]
             ideal_function_list.append(ideal_function)
-            print(df_ideal["function_number"].values[0])
+
             update_ideal_functions(df_ideal["function_number"].values[0])
             return ideal_function_list
 
@@ -81,6 +88,8 @@ class Function():
         
         return df_ideal_functions
 
+
+
 class IdealFunction(Function):
     def __init__(self, ideal_functions):
         self.ideal_functions = ideal_functions
@@ -98,25 +107,17 @@ class IdealFunction(Function):
         column_array = ['x']
         for i in range(0, len(self.ideal_functions)):
             column_array.append(list(self.ideal_functions['function_number'][i].values)[0])
-        # column_array.append(list(self.ideal_functions['function_number'][1].values)[0])
-        # column_array.append(list(self.ideal_functions['function_number'][2].values)[0])
-        # column_array.append(list(self.ideal_functions['function_number'][3].values)[0])
-        print(column_array)
-
 
         ideal_functions_data = get_ideal_functions_data(column_array)
 
         # transpose functions_data to get the data of x and y in rows instead of columns
         ideal_functions_data_transposed = [list(i) for i in zip(*ideal_functions_data)]
-        print("ideal_functions_data_transposed:")
-        print(ideal_functions_data_transposed[0])
-
 
         x = ideal_functions_data_transposed[0]
         #add constant to predictor variables
         x = sm.add_constant(x)
         for index, row in test_data_df.iterrows():
-            print(index)
+            # print(index)
 
             for i, yvalue in enumerate(ideal_functions_data_transposed[1:]):
                 y = yvalue
@@ -124,10 +125,10 @@ class IdealFunction(Function):
                 model = sm.OLS(y, x).fit()
                 test_x = pd.DataFrame(np.array([[1, row['x']]]), columns=["const","x"])
                 y_pred = model.predict(test_x)
-                print(y_pred)
+                # print(y_pred)
                 y_true = pd.DataFrame(np.array([[row['y']]]), columns=["y"])
                 y_rmse = root_mean_squared_error(y_true, y_pred)
-                print(y_rmse)
+                # print(y_rmse)
                 if (i==0): 
                     min_rmse = y_rmse
                     min_rmse_function = column_array[1]
@@ -135,23 +136,18 @@ class IdealFunction(Function):
                     if (y_rmse < min_rmse):
                         min_rmse = y_rmse
                         min_rmse_function = column_array[i+1]
-            print(min_rmse)
+            # print(min_rmse)
             update_test_data(index+1, min_rmse_function, min_rmse)
-
-
-        
 
 
 
 def main():
-    if create_and_initial_load:
-
-
+    if (create_and_initial_load=="True"):
         # create table and load data to identify 50 functions
         functions_data_df = load_csv_to_df("./data/ideal.csv")
         create_functions_data_table()
         load_data_table("functionsdata", functions_data_df)
-        print(len(functions_data_df))
+
 
         # create table and load training data
         training_data_df = load_csv_to_df("./data/train.csv")
@@ -166,12 +162,26 @@ def main():
     olsfunction = Function()
     training_data_df = load_csv_to_df("./data/train.csv")
     rmse_values = olsfunction.get_rmse_from_function(training_data_df)
-    print("rmse_values")
+    # print("rmse_values")
     ideal_functions = olsfunction.get_ideal_functions(rmse_values)
-    print(type(ideal_functions))
+    # print(type(ideal_functions))
     ideal_function = IdealFunction(ideal_functions)
     testing_data_df = load_csv_to_df("./data/test.csv")
     ideal_function.get_rmse_from_function(testing_data_df)
+
+    if (create_visualisation=="True"):
+        charthelp.create_line_charts(training_data_df, 'Training Data Line Plot')
+        functions_data_df = load_csv_to_df("./data/ideal.csv")
+        charthelp.create_line_charts(functions_data_df, 'Functions Data Line Plot')
+
+        ideal_functions_numbers = get_ideal_functions_numbers()
+        # print(ideal_functions_dataset)
+        function_numbers=["x"]
+        for i, value in enumerate(ideal_functions_numbers):
+            # print(value[0])
+            function_numbers.append(value[0])
+        print(function_numbers)
+        charthelp.create_line_charts(line_df=functions_data_df, title='Ideal functions line plot with test data scatter plot', columns=function_numbers, scatter_plot=True, scatter_df=testing_data_df)
 
 
 if __name__ == '__main__':
