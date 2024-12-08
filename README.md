@@ -14,8 +14,14 @@ Where possible, suitable unit-tests are created
 
 Additional criteria:
 - Its design is sensibly object-oriented
+  
 − It includes at least one inheritance
+
 − It includes standard- und user-defined exception handlings
+
 − For logical reasons, it makes use of Pandas’ packages as well as data visualization via Bokeh, sqlalchemy, as well as others
+
 − Write unit-tests for all useful elements
+
 − Your code needs to be documented in its entirety and also include Documentation Strings, known as ”docstrings“
+
